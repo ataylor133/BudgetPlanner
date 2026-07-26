@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Welcome - Initial Setup</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #121212; color: #e0e0e0; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px;}
+        .setup-box { background: #1e1e1e; padding: 30px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); width: 100%; max-width: 500px; border: 1px solid #333; }
+        h2 { margin-top: 0; text-align: center; }
+        label { font-weight: bold; display: block; margin-top: 15px; margin-bottom: 5px; }
+        input { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #333; border-radius: 4px; box-sizing: border-box; background: #2d2d2d; color: #e0e0e0; }
+        button { width: 100%; padding: 12px; background: #28a745; color: white; border: none; border-radius: 4px; font-size: 16px; cursor: pointer; margin-top: 20px;}
+        .error { color: #dc3545; background: #f8d7da; padding: 10px; border: 1px solid #f5c6cb; border-radius: 4px;}
+        .success { color: #28a745; background: #d4edda; padding: 10px; border: 1px solid #c3e6cb; border-radius: 4px;}
+        .pct-row { display: flex; gap: 10px; }
+        .pct-row div { flex: 1; }
+    </style>
+</head>
+<body>
+    <div class="setup-box">
+        <h2>Welcome to Budget Planner!</h2>
+        <p style="text-align: center; color: #aaa;">Let's get your profile set up.</p>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST" action="/initialize" enctype="multipart/form-data">
+            <input type="hidden" name="timezone" id="timezoneInput">
+
+            <label>Your Name</label>
+            <input type="text" name="name" value="{{ form_data.get('name', '') }}" required placeholder="John Doe">
+
+            <label>Typical Monthly Income ({{ symbol }})</label>
+            <input type="number" step="0.01" name="income" value="{{ form_data.get('income', '') }}" required placeholder="5000">
+
+            <label>Typical Monthly Bills ({{ symbol }})</label>
+            <input type="number" step="0.01" name="bills" value="{{ form_data.get('bills', '') }}" required placeholder="2000">
+
+            <label>Custom Budget Targets (%)</label>
+            <div class="pct-row">
+                <div><span style="font-size: 12px; color: #aaa;">Needs</span><input type="number" name="needs_pct" value="{{ form_data.get('needs_pct', '50') }}" required></div>
+                <div><span style="font-size: 12px; color: #aaa;">Wants</span><input type="number" name="wants_pct" value="{{ form_data.get('wants_pct', '30') }}" required></div>
+                <div><span style="font-size: 12px; color: #aaa;">Savings</span><input type="number" name="savings_pct" value="{{ form_data.get('savings_pct', '20') }}" required></div>
+            </div>
+
+            <hr style="margin: 20px 0; border: 0; border-top: 1px solid #333;">
+
+            <label>Import Historical Data (Optional)</label>
+
+            <!-- Built-In Formatting Guide -->
+            <details style="margin-bottom: 15px; font-size: 13px; color: #aaa; background: #2d2d2d; padding: 10px; border-radius: 4px; border: 1px solid #444;">
+                <summary style="cursor: pointer; font-weight: bold; color: #e0e0e0;">CSV Formatting Guide</summary>
+                <p style="margin-top: 10px;">The importer supports multiple files simultaneously. It auto-detects two formats:</p>
+                <ul style="padding-left: 20px; line-height: 1.6;">
+                    <li><strong>Standard:</strong> Date, Type (Deposit/Withdrawal), Category, Amount, Description.</li>
+                    <li><strong>Bank Export:</strong> Date, Description, and either a single 'Amount' column OR split 'Debit' and 'Credit' columns.</li>
+                </ul>
+                <p>The parser automatically ignores bank preambles (junk text at the top of the file) and auto-corrects messy date formats.</p>
+            </details>
+
+            <input type="file" name="csv_files" accept=".csv" multiple>
+
+            <button type="submit">Complete Setup</button>
+        </form>
+    </div>
+
+    <script>
+        document.getElementById('timezoneInput').value = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    </script>
+</body>
+</html>

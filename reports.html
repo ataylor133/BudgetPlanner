@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<h3>Monthly Historical Comparison</h3>
+<p>Compare your total Income vs. Expenses over time.</p>
+
+<div class="card" style="max-width: 800px;">
+    <canvas id="monthlyChart"></canvas>
+</div>
+
+<script>
+    const labels = {{ months_json | safe }};
+    const incomeData = {{ incomes_json | safe }};
+    const expenseData = {{ expenses_json | safe }};
+
+    const ctx = document.getElementById('monthlyChart').getContext('2d');
+    const isDark = document.body.classList.contains('dark-mode');
+    Chart.defaults.color = isDark ? '#e0e0e0' : '#333';
+
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Total Income',
+                    data: incomeData,
+                    backgroundColor: 'rgba(40, 167, 69, 0.7)',
+                    borderColor: 'rgba(40, 167, 69, 1)',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Total Expenses',
+                    data: expenseData,
+                    backgroundColor: 'rgba(220, 53, 69, 0.7)',
+                    borderColor: 'rgba(220, 53, 69, 1)',
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: { responsive: true, scales: { y: { beginAtZero: true } } }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="card" style="max-width: 600px; margin: 40px auto; padding: 30px;">
+    <h3 style="margin-top:0;">Log New Transaction</h3>
+
+    <form class="stacked-form" method="POST" action="/add">
+        <label>Account:</label>
+        <select name="account_name" required>
+            {% for acc in accounts %}
+                <option value="{{ acc.name }}">{{ acc.name }}</option>
+            {% endfor %}
+        </select>
+
+        <label>Transaction Type:</label>
+        <select name="type" required>
+            <option value="Deposit">Deposit</option>
+            <option value="Withdrawal">Withdrawal</option>
+        </select>
+
+        <label>Amount ({{ symbol }}):</label>
+        <input type="number" step="0.01" name="amount" required>
+
+        <label>Category (Optional):</label>
+        <select name="category">
+            <option value="">-- None --</option>
+            {% for cat in categories %}
+                <option value="{{ cat.name }}">{{ cat.name }} ({{ cat.trans_type }})</option>
+            {% endfor %}
+        </select>
+
+        <label>Date:</label>
+        <input type="date" name="date" required>
+
+        <label>Description:</label>
+        <input type="text" name="description" maxlength="{{ max_desc }}">
+
+        <button type="submit" class="btn-success" style="align-self: flex-start; margin-top: 10px;">➕ Save Transaction</button>
+    </form>
+</div>
+{% endblock %}

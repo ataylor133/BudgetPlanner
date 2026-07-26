@@ -1,0 +1,193 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .settings-panel { background: var(--card-bg); padding: 20px; border-radius: 5px; border: 1px solid var(--border-color); }
+    h3 { margin-top: 0; }
+    .inline-form { display: flex; gap: 10px; margin-bottom: 10px; align-items: flex-end;}
+    .inline-form > div { flex: 1; }
+    .inline-form input, .inline-form select { margin-bottom: 0; }
+    .list-table td, .list-table th { padding: 8px; }
+</style>
+
+<div class="settings-grid">
+
+    <!-- Account Management -->
+    <div class="settings-panel">
+        <h3>Accounts</h3>
+        <p style="font-size: 14px;">Manage multiple accounts (e.g. Checking, Savings).</p>
+        <form class="inline-form" method="POST" action="/account/add">
+            <div>
+                <input type="text" name="name" required placeholder="Account Name">
+            </div>
+            <button type="submit" class="btn-success" style="padding: 10px 15px;" title="Add Account">➕</button>
+        </form>
+        <table class="list-table">
+            {% for a in accounts %}
+            <tr>
+                <td>{{ a.name }}</td>
+                <td style="width: 50px;">
+                    <form action="/account/delete/{{ a.id }}" method="POST" style="margin:0;" onsubmit="return confirm('Deleting an account removes it from views. Continue?');">
+                        <button type="submit" class="btn-danger" style="padding: 6px 10px;" title="Delete">🗑️</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+
+    <!-- Data Import -->
+    <div class="settings-panel">
+        <h3>Import Historical Data</h3>
+        <p style="font-size: 14px;">Upload multiple .csv files. Assign them to a specific account.</p>
+        <form method="POST" action="/settings" enctype="multipart/form-data">
+
+            <select name="import_account" required style="margin-bottom: 10px;">
+                {% for acc in accounts %}
+                    <option value="{{ acc.name }}">{{ acc.name }}</option>
+                {% endfor %}
+            </select>
+
+            <!-- Built-In Formatting Guide -->
+            <details style="margin-bottom: 15px; font-size: 14px; background: var(--input-bg); padding: 10px; border-radius: 4px; border: 1px solid var(--border-color);">
+                <summary style="cursor: pointer; font-weight: bold; color: var(--text-color);">CSV Formatting Guide</summary>
+                <p style="margin-top: 10px; color: var(--text-color);">The importer auto-detects two formats:</p>
+                <ul style="padding-left: 20px; color: var(--text-color); line-height: 1.6;">
+                    <li><strong>Standard:</strong> Date, Type (Deposit/Withdrawal), Category, Amount, Description.</li>
+                    <li><strong>Bank Export:</strong> Date, Description, and either a single 'Amount' column OR split 'Debit' and 'Credit' columns.</li>
+                </ul>
+                <p style="color: var(--text-color);">The parser automatically ignores bank preambles (junk text at the top of the file) and normalizes messy dates.</p>
+            </details>
+
+            <input type="file" name="csv_files" accept=".csv" multiple style="display: block; margin-bottom: 15px;">
+            <button type="submit" class="btn-success">📥 Import</button>
+        </form>
+    </div>
+
+    <!-- Budget Rules -->
+    <div class="settings-panel" style="grid-column: span 2;">
+        <h3>Budget Targets & Rules</h3>
+        <form method="POST" action="/settings" class="inline-form">
+            <div>
+                <label>Typical Monthly Income</label>
+                <input type="number" step="0.01" name="income" value="{{ settings.monthly_income }}" required>
+            </div>
+            <div>
+                <label>Typical Bills</label>
+                <input type="number" step="0.01" name="bills" value="{{ settings.monthly_bills }}" required>
+            </div>
+            <div>
+                <label>Needs %</label>
+                <input type="number" step="1" name="needs_pct" value="{{ settings.needs_pct }}" required>
+            </div>
+            <div>
+                <label>Wants %</label>
+                <input type="number" step="1" name="wants_pct" value="{{ settings.wants_pct }}" required>
+            </div>
+            <div>
+                <label>Savings %</label>
+                <input type="number" step="1" name="savings_pct" value="{{ settings.savings_pct }}" required>
+            </div>
+            <button type="submit" class="btn-primary" style="padding: 10px 15px;" title="Update Targets">💾</button>
+        </form>
+    </div>
+
+    <!-- Custom Categories -->
+    <div class="settings-panel" style="grid-column: span 2;">
+        <h3>Custom Budget Categories</h3>
+
+        <form class="inline-form" method="POST" action="/category/add">
+            <div>
+                <label>Category Name</label>
+                <input type="text" name="name" required placeholder="e.g. Gym Membership">
+            </div>
+            <div>
+                <label>Type</label>
+                <select name="type" required>
+                    <option value="Withdrawal">Withdrawal</option>
+                    <option value="Deposit">Deposit</option>
+                </select>
+            </div>
+            <div>
+                <label>Mapped Bucket</label>
+                <select name="bucket" required>
+                    <option value="Needs">Needs</option>
+                    <option value="Wants">Wants</option>
+                    <option value="Savings">Savings</option>
+                    <option value="Income Source">Income Source</option>
+                </select>
+            </div>
+            <button type="submit" class="btn-success" style="padding: 10px 15px;" title="Add Category">➕</button>
+        </form>
+
+        <table class="list-table">
+            <tr><th>Name</th><th>Type</th><th>Bucket Mapping</th><th>Action</th></tr>
+            {% for c in categories %}
+            <tr>
+                <td>{{ c.name }}</td><td>{{ c.trans_type }}</td><td>{{ c.bucket }}</td>
+                <td style="width: 50px;">
+                    <form action="/category/delete/{{ c.id }}" method="POST" style="margin:0;">
+                        <button type="submit" class="btn-danger" style="padding: 6px 10px;" title="Delete">🗑️</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+
+    <!-- Recurring Transactions -->
+    <div class="settings-panel" style="grid-column: span 2;">
+        <h3>Automated Recurring Transactions</h3>
+
+        <form class="inline-form" method="POST" action="/recurring/add">
+            <div>
+                <label>Account</label>
+                <select name="account_name" required>
+                    {% for acc in accounts %}<option value="{{ acc.name }}">{{ acc.name }}</option>{% endfor %}
+                </select>
+            </div>
+            <div>
+                <label>Type</label>
+                <select name="type" required>
+                    <option value="Withdrawal">Withdrawal</option><option value="Deposit">Deposit</option>
+                </select>
+            </div>
+            <div>
+                <label>Amount ({{ symbol }})</label>
+                <input type="number" step="0.01" name="amount" required>
+            </div>
+            <div>
+                <label>Category</label>
+                <select name="category" required>
+                    {% for c in categories %}<option value="{{ c.name }}">{{ c.name }}</option>{% endfor %}
+                </select>
+            </div>
+            <div>
+                <label>Next Due Date</label>
+                <input type="date" name="next_date" required>
+            </div>
+            <div style="flex: 1.5;">
+                <label>Description</label>
+                <input type="text" name="description" placeholder="Netflix">
+            </div>
+            <button type="submit" class="btn-success" style="padding: 10px 15px;" title="Setup Automation">➕</button>
+        </form>
+
+        <table class="list-table">
+            <tr><th>Account</th><th>Next Date</th><th>Type</th><th>Category</th><th>Description</th><th>Amount</th><th>Action</th></tr>
+            {% for r in recurrings %}
+            <tr>
+                <td>{{ r.account_name }}</td><td>{{ r.nextDate }}</td><td>{{ r.transactionType }}</td><td>{{ r.category }}</td>
+                <td>{{ r.description }}</td><td>{{ symbol }}{{ "%.2f"|format(r.transactionAmount) }}</td>
+                <td style="width: 50px;">
+                    <form action="/recurring/delete/{{ r.id }}" method="POST" style="margin:0;">
+                        <button type="submit" class="btn-danger" style="padding: 6px 10px;" title="Stop Recurring">🗑️</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+</div>
+{% endblock %}
